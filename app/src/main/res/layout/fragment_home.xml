@@ -4,6 +4,7 @@
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/black"
     android:animateLayoutChanges="true"
     android:orientation="vertical"
     tools:context=".ui.HomeFragment">
@@ -14,14 +15,6 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:contentDescription="@string/lock_layout_description" />
-
-    <!-- Home button for recents feature disabled -->
-    <!-- Placeholder layout for showing recent apps
-    <FrameLayout
-        android:id="@+id/recents"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:contentDescription="@string/recents_layout_description" /> -->
 
     <!-- Clock and calendar-->
     <LinearLayout
@@ -54,25 +47,122 @@
             android:paddingHorizontal="3dp"
             android:textSize="@dimen/date_size"
             tools:text="Thu, 30 Dec" />
+
     </LinearLayout>
 
     <!-- Screen time-->
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/tvScreenTime"
-        style="@style/TextSmall"
+        style="@style/TextDefault"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="72dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="56dp"
+        android:fontFamily="sans-serif-light"
         android:gravity="center"
-        android:padding="10dp"
-        android:textSize="@dimen/date_size"
+        android:padding="8dp"
+        android:textSize="@dimen/screen_time_size"
         android:visibility="gone"
         tools:text="2h 11m"
         tools:visibility="visible" />
 
-    <!-- Home apps-->
+    <!-- AMOLED Minimalist To-Do Widget -->
+    <LinearLayout
+        android:id="@+id/todoWidgetCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="148dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@drawable/todo_widget_amoled_background"
+        android:orientation="vertical"
+        android:padding="14dp"
+        android:elevation="2dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:id="@+id/todoWidgetHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/tvTodoHeaderTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.08"
+                android:text="@string/todays_priorities"
+                android:textColor="#A0A0A0"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvTodoProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/todo_progress_badge_background"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="7dp"
+                android:paddingVertical="2dp"
+                android:textColor="#CCCCCC"
+                android:textSize="10sp"
+                tools:text="1/3" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/btnQuickAddTodo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/btn_quick_add_background"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:text="@string/add_todo_btn"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Scrollable Todo items container -->
+        <app.olauncher.ui.custom.MaxHeightNestedScrollView
+            android:id="@+id/nsvTodoList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fadeScrollbars="true"
+            android:overScrollMode="never"
+            android:scrollbarSize="2dp"
+            android:scrollbarThumbVertical="@drawable/scrollbar_amoled_thumb"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:id="@+id/llTodoItemsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </app.olauncher.ui.custom.MaxHeightNestedScrollView>
+
+        <!-- Empty State -->
+        <TextView
+            android:id="@+id/tvTodoEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="8dp"
+            android:text="@string/no_priorities_set"
+            android:textColor="#666666"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+    <!-- Home apps container-->
     <LinearLayout
         android:id="@+id/homeAppsLayout"
         android:layout_width="match_parent"
@@ -80,7 +170,7 @@
         android:gravity="center_vertical"
         android:orientation="vertical"
         android:paddingHorizontal="24dp"
-        android:paddingTop="112dp"
+        android:paddingTop="290dp"
         android:paddingBottom="48dp">
 
         <TextView
@@ -176,6 +266,90 @@
             android:hint="@string/app"
             android:paddingVertical="@dimen/home_app_padding_vertical"
             android:tag="@string/tag_8"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp9"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_9"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp10"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_10"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp11"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_11"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp12"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_12"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp13"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_13"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp14"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_14"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/homeApp15"
+            style="@style/TextLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:hint="@string/app"
+            android:paddingVertical="@dimen/home_app_padding_vertical"
+            android:tag="@string/tag_15"
             android:visibility="gone"
             tools:visibility="visible" />
 

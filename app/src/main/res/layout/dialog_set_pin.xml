@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_amoled_background"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:textSize="20sp"
+        android:textColor="?attr/primaryColor"
+        android:text="Set Master PIN" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textSize="16sp"
+        android:textColor="?attr/primaryColorTrans70"
+        android:text="Choose a 4 to 6 digit security PIN." />
+
+    <EditText
+        android:id="@+id/etNewPin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:inputType="numberPassword"
+        android:maxLength="6"
+        android:gravity="center"
+        android:letterSpacing="0.3"
+        android:textSize="22sp"
+        android:fontFamily="monospace"
+        android:hint="New PIN"
+        android:textColor="?attr/primaryColor"
+        android:textColorHint="?attr/primaryColorTrans50" />
+
+    <EditText
+        android:id="@+id/etConfirmPin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:inputType="numberPassword"
+        android:maxLength="6"
+        android:gravity="center"
+        android:letterSpacing="0.3"
+        android:textSize="22sp"
+        android:fontFamily="monospace"
+        android:hint="Confirm PIN"
+        android:textColor="?attr/primaryColor"
+        android:textColorHint="?attr/primaryColorTrans50" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnCancelPin"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:text="Cancel"
+            android:textColor="?attr/primaryColorTrans70" />
+
+        <Button
+            android:id="@+id/btnSavePin"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textSize="16sp"
+            android:text="Save PIN" />
+    </LinearLayout>
+
+</LinearLayout>

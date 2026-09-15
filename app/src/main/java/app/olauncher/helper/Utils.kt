@@ -14,6 +14,7 @@ import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Point
@@ -88,15 +89,19 @@ suspend fun getAppsList(
             for (profile in userManager.userProfiles) {
                 if (isPrivateSpaceProfile(context, profile)) continue
                 for (app in launcherApps.getActivityList(null, profile)) {
-                    val appLabelShown = prefs.getAppRenameLabel(app.applicationInfo.packageName)
+                    val pkg = app.applicationInfo.packageName
+                    val appLabelShown = prefs.getAppRenameLabel(pkg)
                         .ifBlank { app.label.toString() }
                     val appModel = AppModel.App(
                         appLabel = appLabelShown,
                         key = collator.getCollationKey(app.label.toString()),
-                        appPackage = app.applicationInfo.packageName,
+                        appPackage = pkg,
                         activityClassName = app.componentName.className,
                         isNew = (System.currentTimeMillis() - app.firstInstallTime) < Constants.ONE_HOUR_IN_MILLIS,
-                        user = profile
+                        user = profile,
+                        isBiometricLocked = prefs.isAppBiometricLocked(pkg),
+                        isFrictionEnabled = prefs.isAppFrictionEnabled(pkg),
+                        categoryTag = prefs.getAppCategory(pkg)
                     )
 
                     // if the current app is not OLauncher
@@ -169,7 +174,10 @@ private suspend fun getPinnedShortcuts(
                                     appPackage = shortcut.`package`,
                                     shortcutId = shortcut.id,
                                     isNew = false,
-                                    user = profile
+                                    user = profile,
+                                    isBiometricLocked = prefs.isAppBiometricLocked(shortcut.`package`),
+                                    isFrictionEnabled = prefs.isAppFrictionEnabled(shortcut.`package`),
+                                    categoryTag = prefs.getAppCategory(shortcut.`package`)
                                 )
                             )
                         }
@@ -315,6 +323,28 @@ fun setPlainWallpaper(context: Context, color: Int) {
         bitmap.recycle()
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+fun setAmoledLockScreenWallpaper(context: Context): Boolean {
+    return try {
+        val (width, height) = getScreenDimensions(context)
+        val w = width.coerceAtLeast(1080)
+        val h = height.coerceAtLeast(2400)
+        val bitmap = createBitmap(w, h)
+        bitmap.eraseColor(Color.BLACK)
+        val manager = WallpaperManager.getInstance(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            manager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_LOCK)
+            manager.setBitmap(bitmap, null, false, WallpaperManager.FLAG_SYSTEM)
+        } else {
+            manager.setBitmap(bitmap)
+        }
+        bitmap.recycle()
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
     }
 }
 

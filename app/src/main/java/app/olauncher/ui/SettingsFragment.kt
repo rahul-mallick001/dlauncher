@@ -13,18 +13,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import app.olauncher.BuildConfig
 import app.olauncher.MainViewModel
 import app.olauncher.R
 import app.olauncher.data.Constants
 import app.olauncher.data.Prefs
 import app.olauncher.databinding.FragmentSettingsBinding
+import app.olauncher.helper.BiometricHelper
 import app.olauncher.helper.animateAlpha
 import app.olauncher.helper.appUsagePermissionGranted
 import app.olauncher.helper.getColorFromAttr
@@ -36,6 +39,7 @@ import app.olauncher.helper.isTablet
 import app.olauncher.helper.openAppInfo
 import app.olauncher.helper.openUrl
 import app.olauncher.helper.rateApp
+import app.olauncher.helper.setAmoledLockScreenWallpaper
 import app.olauncher.helper.setPlainWallpaper
 import app.olauncher.helper.shareApp
 import app.olauncher.helper.showToast
@@ -74,30 +78,26 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         populateKeyboardText()
         populateScreenTimeOnOff()
         populateLockSettings()
-        // Home button for recents feature disabled
-        // populateHomeButtonRecents()
         populateWallpaperText()
         populateAppThemeText()
+        populateFontFamily()
         populateTextSize()
         populateBoldFont()
         populateAlignment()
         populateStatusBar()
         populateDateTime()
         populateSwipeApps()
-        populateSwipeDownAction()
+        populateProductivityFeatures()
+        populateSecurityFeatures()
         populateActionHints()
         initClickListeners()
         initObservers()
-
-        if (showPentastic)
-            binding.footer.text = getText(R.string.new_app_minimal_todo_lists)
     }
 
     override fun onClick(view: View) {
         binding.appsNumSelectLayout.visibility = View.GONE
         binding.dateTimeSelectLayout.visibility = View.GONE
         binding.appThemeSelectLayout.visibility = View.GONE
-        binding.swipeDownSelectLayout.visibility = View.GONE
         if (view.id != R.id.textSizeMinus && view.id != R.id.textSizePlus) {
             if (binding.textSizesLayout.isVisible) {
                 binding.textSizesLayout.visibility = View.GONE
@@ -109,16 +109,12 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
 
         when (view.id) {
             R.id.olauncherHiddenApps -> showHiddenApps()
-            R.id.moreFeatures -> viewModel.showDialog.postValue(Constants.Dialog.PRO_MESSAGE)
             R.id.screenTimeOnOff -> viewModel.showDialog.postValue(Constants.Dialog.DIGITAL_WELLBEING)
             R.id.appInfo -> openAppInfo(requireContext(), Process.myUserHandle(), BuildConfig.APPLICATION_ID)
             R.id.setLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.toggleLock -> toggleLockMode()
-            // Home button for recents feature disabled
-            // R.id.homeButtonRecents -> toggleHomeButtonRecents()
             R.id.autoShowKeyboard -> toggleKeyboardText()
             R.id.homeAppsNum -> binding.appsNumSelectLayout.visibility = View.VISIBLE
-            R.id.dailyWallpaperUrl -> requireContext().openUrl(prefs.dailyWallpaperUrl)
             R.id.dailyWallpaper -> toggleDailyWallpaperUpdate()
             R.id.alignment -> binding.alignmentSelectLayout.visibility = View.VISIBLE
             R.id.alignmentLeft -> viewModel.updateHomeAlignment(Gravity.START)
@@ -134,13 +130,18 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             R.id.themeLight -> updateTheme(AppCompatDelegate.MODE_NIGHT_NO)
             R.id.themeDark -> updateTheme(AppCompatDelegate.MODE_NIGHT_YES)
             R.id.themeSystem -> updateTheme(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            R.id.tvFontFamily -> cycleFontFamily()
             R.id.textSizeValue -> binding.textSizesLayout.visibility = View.VISIBLE
             R.id.boldFont -> toggleBoldFont()
-            R.id.actionAccessibility -> openAccessibilityService()
-            R.id.closeAccessibility -> toggleAccessibilityVisibility(false)
-            R.id.notWorking -> requireContext().openUrl(Constants.URL_DOUBLE_TAP)
 
-            R.id.tvGestures -> binding.flSwipeDown.visibility = View.VISIBLE
+            // New Redesigned Features
+            R.id.tvCalcInSearch -> toggleCalcInSearch()
+            R.id.tvFuzzySearch -> toggleFuzzySearch()
+            R.id.tvSearchShortcuts -> toggleSearchShortcuts()
+            R.id.tvBiometricLock -> toggleBiometricLock()
+            R.id.tvFrictionMode -> toggleFrictionMode()
+            R.id.tvRestrictedVault -> app.olauncher.ui.vault.VaultSettingsDialogFragment.newInstance().show(parentFragmentManager, "VAULT_SETTINGS")
+            R.id.tvDailyTodos -> app.olauncher.ui.vault.TodoListDialogFragment.newInstance().show(parentFragmentManager, "TODO_LIST")
 
             R.id.maxApps0 -> updateHomeAppsNum(0)
             R.id.maxApps1 -> updateHomeAppsNum(1)
@@ -151,34 +152,33 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             R.id.maxApps6 -> updateHomeAppsNum(6)
             R.id.maxApps7 -> updateHomeAppsNum(7)
             R.id.maxApps8 -> updateHomeAppsNum(8)
+            R.id.maxApps9 -> updateHomeAppsNum(9)
+            R.id.maxApps10 -> updateHomeAppsNum(10)
+            R.id.maxApps11 -> updateHomeAppsNum(11)
+            R.id.maxApps12 -> updateHomeAppsNum(12)
+            R.id.maxApps13 -> updateHomeAppsNum(13)
+            R.id.maxApps14 -> updateHomeAppsNum(14)
+            R.id.maxApps15 -> updateHomeAppsNum(15)
 
             R.id.textSizeMinus -> adjustTextSizePreview(-0.1f)
             R.id.textSizePlus -> adjustTextSizePreview(0.1f)
 
             R.id.swipeLeftApp -> showAppListIfEnabled(Constants.FLAG_SET_SWIPE_LEFT_APP)
             R.id.swipeRightApp -> showAppListIfEnabled(Constants.FLAG_SET_SWIPE_RIGHT_APP)
-            R.id.swipeDownAction -> binding.swipeDownSelectLayout.visibility = View.VISIBLE
-            R.id.notifications -> updateSwipeDownAction(Constants.SwipeDownAction.NOTIFICATIONS)
-            R.id.search -> updateSwipeDownAction(Constants.SwipeDownAction.SEARCH)
 
-            R.id.aboutOlauncher -> {
+            R.id.aboutOlauncher, R.id.aboutOlauncherLayout, R.id.btnReadFullPhilosophy, R.id.cardAboutPhilosophy -> {
                 prefs.aboutClicked = true
-                requireContext().openUrl(Constants.URL_ABOUT_OLAUNCHER)
+                AboutDialogFragment.newInstance().show(parentFragmentManager, "AboutDialog")
             }
-
-            R.id.share -> requireActivity().shareApp()
-            R.id.rate -> {
-                prefs.rateClicked = true
-                requireActivity().rateApp()
-            }
-
-            R.id.twitter -> requireContext().openUrl(Constants.URL_TWITTER_TANUJ)
-            R.id.github -> requireContext().openUrl(Constants.URL_OLAUNCHER_GITHUB)
             R.id.privacy -> requireContext().openUrl(Constants.URL_OLAUNCHER_PRIVACY)
-            R.id.footer -> {
-                requireContext().openUrl(
-                    if (showPentastic) Constants.URL_PENTASTIC else Constants.URL_NTS
-                )
+            R.id.btnApplyAmoledLockScreen -> {
+                val success = setAmoledLockScreenWallpaper(requireContext())
+                if (success) {
+                    prefs.amoledLockScreenApplied = true
+                    requireContext().showToast(R.string.amoled_lock_screen_applied)
+                } else {
+                    requireContext().showToast(R.string.failed_to_set_lock_screen)
+                }
             }
         }
     }
@@ -190,13 +190,11 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
                 findNavController().navigate(R.id.action_settingsFragment_to_appListFragment)
                 requireContext().showToast(getString(R.string.alignment_changed))
             }
-
             R.id.dailyWallpaper -> removeWallpaper()
             R.id.appThemeText -> {
                 binding.appThemeSelectLayout.visibility = View.VISIBLE
                 binding.themeSystem.visibility = View.VISIBLE
             }
-
             R.id.swipeLeftApp -> toggleSwipeLeft()
             R.id.swipeRightApp -> toggleSwipeRight()
             R.id.toggleLock -> startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -210,14 +208,13 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         binding.appInfo.setOnClickListener(this)
         binding.setLauncher.setOnClickListener(this)
         binding.aboutOlauncher.setOnClickListener(this)
-        binding.moreFeatures.setOnClickListener(this)
+        binding.aboutOlauncherLayout.setOnClickListener(this)
+        binding.btnReadFullPhilosophy.setOnClickListener(this)
+        binding.cardAboutPhilosophy.setOnClickListener(this)
         binding.autoShowKeyboard.setOnClickListener(this)
         binding.toggleLock.setOnClickListener(this)
-        // Home button for recents feature disabled
-        // binding.homeButtonRecents.setOnClickListener(this)
         binding.homeAppsNum.setOnClickListener(this)
         binding.screenTimeOnOff.setOnClickListener(this)
-        binding.dailyWallpaperUrl.setOnClickListener(this)
         binding.dailyWallpaper.setOnClickListener(this)
         binding.alignment.setOnClickListener(this)
         binding.alignmentLeft.setOnClickListener(this)
@@ -225,31 +222,30 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         binding.alignmentRight.setOnClickListener(this)
         binding.alignmentBottom.setOnClickListener(this)
         binding.statusBar.setOnClickListener(this)
+        binding.btnApplyAmoledLockScreen.setOnClickListener(this)
         binding.dateTime.setOnClickListener(this)
         binding.dateTimeOn.setOnClickListener(this)
         binding.dateTimeOff.setOnClickListener(this)
         binding.dateOnly.setOnClickListener(this)
         binding.swipeLeftApp.setOnClickListener(this)
         binding.swipeRightApp.setOnClickListener(this)
-        binding.swipeDownAction.setOnClickListener(this)
-        binding.search.setOnClickListener(this)
-        binding.notifications.setOnClickListener(this)
         binding.appThemeText.setOnClickListener(this)
         binding.themeLight.setOnClickListener(this)
         binding.themeDark.setOnClickListener(this)
         binding.themeSystem.setOnClickListener(this)
+        binding.tvFontFamily.setOnClickListener(this)
         binding.textSizeValue.setOnClickListener(this)
         binding.boldFont.setOnClickListener(this)
-        binding.actionAccessibility.setOnClickListener(this)
-        binding.closeAccessibility.setOnClickListener(this)
-        binding.notWorking.setOnClickListener(this)
 
-        binding.share.setOnClickListener(this)
-        binding.rate.setOnClickListener(this)
-        binding.twitter.setOnClickListener(this)
-        binding.github.setOnClickListener(this)
+        binding.tvCalcInSearch.setOnClickListener(this)
+        binding.tvFuzzySearch.setOnClickListener(this)
+        binding.tvSearchShortcuts.setOnClickListener(this)
+        binding.tvBiometricLock.setOnClickListener(this)
+        binding.tvFrictionMode.setOnClickListener(this)
+        binding.tvRestrictedVault.setOnClickListener(this)
+        binding.tvDailyTodos.setOnClickListener(this)
+
         binding.privacy.setOnClickListener(this)
-        binding.footer.setOnClickListener(this)
 
         binding.maxApps0.setOnClickListener(this)
         binding.maxApps1.setOnClickListener(this)
@@ -260,6 +256,13 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         binding.maxApps6.setOnClickListener(this)
         binding.maxApps7.setOnClickListener(this)
         binding.maxApps8.setOnClickListener(this)
+        binding.maxApps9.setOnClickListener(this)
+        binding.maxApps10.setOnClickListener(this)
+        binding.maxApps11.setOnClickListener(this)
+        binding.maxApps12.setOnClickListener(this)
+        binding.maxApps13.setOnClickListener(this)
+        binding.maxApps14.setOnClickListener(this)
+        binding.maxApps15.setOnClickListener(this)
 
         binding.textSizeMinus.setOnClickListener(this)
         binding.textSizePlus.setOnClickListener(this)
@@ -288,6 +291,84 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         }
         viewModel.updateSwipeApps.observe(viewLifecycleOwner) {
             populateSwipeApps()
+        }
+    }
+
+    private fun toggleFuzzySearch() {
+        prefs.fuzzySearch = !prefs.fuzzySearch
+        populateProductivityFeatures()
+    }
+
+    private fun toggleCalcInSearch() {
+        prefs.calcInSearch = !prefs.calcInSearch
+        populateProductivityFeatures()
+    }
+
+    private fun toggleSearchShortcuts() {
+        prefs.searchShortcuts = !prefs.searchShortcuts
+        populateProductivityFeatures()
+    }
+
+    private fun populateProductivityFeatures() {
+        binding.tvFuzzySearch.text = if (prefs.fuzzySearch) getString(R.string.on) else getString(R.string.off)
+        binding.tvCalcInSearch.text = if (prefs.calcInSearch) getString(R.string.on) else getString(R.string.off)
+        binding.tvSearchShortcuts.text = if (prefs.searchShortcuts) getString(R.string.on) else getString(R.string.off)
+    }
+
+    private fun toggleBiometricLock() {
+        if (!prefs.biometricLockEnabled) {
+            if (!BiometricHelper.isBiometricAvailable(requireContext())) {
+                requireContext().showToast("Biometrics / Screen Lock not set up on device")
+                return
+            }
+            BiometricHelper.authenticate(
+                activity = requireActivity(),
+                title = "Enable Biometric Security",
+                onSuccess = {
+                    prefs.biometricLockEnabled = true
+                    populateSecurityFeatures()
+                    requireContext().showToast("Biometric protection enabled")
+                },
+                onError = { err -> requireContext().showToast(err) }
+            )
+        } else {
+            prefs.biometricLockEnabled = false
+            populateSecurityFeatures()
+        }
+    }
+
+    private fun toggleFrictionMode() {
+        prefs.frictionModeEnabled = !prefs.frictionModeEnabled
+        populateSecurityFeatures()
+    }
+
+    private fun populateSecurityFeatures() {
+        binding.tvBiometricLock.text = if (prefs.biometricLockEnabled) getString(R.string.on) else getString(R.string.off)
+        binding.tvFrictionMode.text = if (prefs.frictionModeEnabled) getString(R.string.on) else getString(R.string.off)
+    }
+
+    private fun cycleFontFamily() {
+        val next = when (prefs.fontFamily) {
+            Constants.Font.SYSTEM -> Constants.Font.MONOSPACE
+            Constants.Font.MONOSPACE -> Constants.Font.SANS_SERIF
+            Constants.Font.SANS_SERIF -> Constants.Font.SERIF
+            Constants.Font.SERIF -> Constants.Font.ROUNDED
+            Constants.Font.ROUNDED -> Constants.Font.CONDENSED
+            else -> Constants.Font.SYSTEM
+        }
+        prefs.fontFamily = next
+        populateFontFamily()
+        requireActivity().recreate()
+    }
+
+    private fun populateFontFamily() {
+        binding.tvFontFamily.text = when (prefs.fontFamily) {
+            Constants.Font.MONOSPACE -> getString(R.string.font_monospace)
+            Constants.Font.SANS_SERIF -> getString(R.string.font_sans)
+            Constants.Font.SERIF -> getString(R.string.font_serif)
+            Constants.Font.ROUNDED -> getString(R.string.font_rounded)
+            Constants.Font.CONDENSED -> getString(R.string.font_condensed)
+            else -> getString(R.string.font_system)
         }
     }
 
@@ -383,27 +464,10 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
             prefs.lockModeOn = isAdmin
     }
 
-    private fun toggleAccessibilityVisibility(show: Boolean) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            binding.notWorking.visibility = View.VISIBLE
-        if (isAccessServiceEnabled(requireContext()))
-            binding.actionAccessibility.text = getString(R.string.disable)
-        binding.accessibilityLayout.isVisible = show
-        binding.scrollView.animateAlpha(if (show) 0.5f else 1f)
-    }
-
-    private fun openAccessibilityService() {
-        toggleAccessibilityVisibility(false)
-        // prefs.lockModeOn = true
-        populateLockSettings()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-    }
-
     private fun toggleLockMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             if (!prefs.lockModeOn && !isAccessServiceEnabled(requireContext())) {
-                toggleAccessibilityVisibility(true)
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 return
             }
             prefs.lockModeOn = !prefs.lockModeOn
@@ -427,7 +491,7 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
 
     private fun removeActiveAdmin(toastMessage: String? = null) {
         try {
-            deviceManager.removeActiveAdmin(componentName) // for backward compatibility
+            deviceManager.removeActiveAdmin(componentName)
             requireContext().showToast(toastMessage)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -601,23 +665,6 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         else getString(R.string.bottom_off)
     }
 
-    // Home button for recents feature disabled
-    // private fun toggleHomeButtonRecents() {
-    //     if (!prefs.homeButtonShowRecents && !isAccessServiceEnabled(requireContext())) {
-    //         toggleAccessibilityVisibility(true)
-    //         return
-    //     }
-    //     prefs.homeButtonShowRecents = !prefs.homeButtonShowRecents
-    //     populateHomeButtonRecents()
-    // }
-
-    // private fun populateHomeButtonRecents() {
-    //     binding.homeButtonRecents.text = getString(
-    //         if (prefs.homeButtonShowRecents && isAccessServiceEnabled(requireContext())) R.string.on
-    //         else R.string.off
-    //     )
-    // }
-
     private fun populateLockSettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             binding.toggleLock.text = getString(
@@ -632,19 +679,6 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         }
     }
 
-    private fun populateSwipeDownAction() {
-        binding.swipeDownAction.text = when (prefs.swipeDownAction) {
-            Constants.SwipeDownAction.NOTIFICATIONS -> getString(R.string.notifications)
-            else -> getString(R.string.search)
-        }
-    }
-
-    private fun updateSwipeDownAction(swipeDownFor: Int) {
-        if (prefs.swipeDownAction == swipeDownFor) return
-        prefs.swipeDownAction = swipeDownFor
-        populateSwipeDownAction()
-    }
-
     private fun populateSwipeApps() {
         binding.swipeLeftApp.text = prefs.appNameSwipeLeft
         binding.swipeRightApp.text = prefs.appNameSwipeRight
@@ -653,12 +687,6 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
         if (!prefs.swipeRightEnabled)
             binding.swipeRightApp.setTextColor(requireContext().getColorFromAttr(R.attr.primaryColorTrans50))
     }
-
-//    private fun populateDigitalWellbeing() {
-//        binding.digitalWellbeing.isVisible = requireContext().isPackageInstalled(Constants.DIGITAL_WELLBEING_PACKAGE_NAME).not()
-//                && requireContext().isPackageInstalled(Constants.DIGITAL_WELLBEING_SAMSUNG_PACKAGE_NAME).not()
-//                && prefs.hideDigitalWellbeing.not()
-//    }
 
     private fun showAppListIfEnabled(flag: Int) {
         if ((flag == Constants.FLAG_SET_SWIPE_LEFT_APP) and !prefs.swipeLeftEnabled) {
@@ -679,16 +707,9 @@ class SettingsFragment : BaseFragment(), View.OnClickListener, View.OnLongClickL
     private fun populateActionHints() {
         if (prefs.aboutClicked.not())
             binding.aboutOlauncher.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_info, 0)
-        if (viewModel.isOlauncherDefault.value != true) return
-        if (prefs.rateClicked.not() && prefs.toShowHintCounter > Constants.HINT_RATE_US && prefs.toShowHintCounter < Constants.HINT_RATE_US + 100)
-            binding.rate.setCompoundDrawablesWithIntrinsicBounds(0, android.R.drawable.arrow_down_float, 0, 0)
     }
 
     private fun populateProMessage() {
-        if (prefs.proMessageShown.not() && prefs.userState == Constants.UserState.SHARE) {
-            prefs.proMessageShown = true
-            viewModel.showDialog.postValue(Constants.Dialog.PRO_MESSAGE)
-        }
     }
 
     override fun onDestroyView() {

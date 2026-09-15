@@ -1,7 +1,8 @@
-package app.olauncher.ui
+﻿package app.olauncher.ui
 
 import android.content.Context
 import android.content.pm.LauncherApps
+import android.graphics.Typeface
 import android.os.UserHandle
 import android.text.Editable
 import android.text.TextWatcher
@@ -20,9 +21,13 @@ import app.olauncher.data.AppModel
 import app.olauncher.data.Constants
 import app.olauncher.databinding.AdapterAppDrawerBinding
 import app.olauncher.databinding.AdapterPrivateSpaceHeaderBinding
+import app.olauncher.helper.CalculatorEngine
+import app.olauncher.helper.FuzzySearchEngine
+import app.olauncher.helper.copyToClipboard
 import app.olauncher.helper.hideKeyboard
 import app.olauncher.helper.isSystemApp
 import app.olauncher.helper.showKeyboard
+import app.olauncher.helper.showToast
 import java.text.Normalizer
 
 class AppDrawerAdapter(
@@ -35,11 +40,16 @@ class AppDrawerAdapter(
     private val appRenameListener: (AppModel, String) -> Unit,
     private val privateSpaceToggleListener: () -> Unit = {},
     private val privateSpaceSettingsListener: () -> Unit = {},
+    private val appPinListener: (AppModel) -> Unit = {},
+    private val appLockListener: (AppModel) -> Unit = {},
+    private val appFrictionListener: (AppModel) -> Unit = {},
+    private val appCategoryListener: (AppModel, String) -> Unit = { _, _ -> }
 ) : ListAdapter<AppModel, RecyclerView.ViewHolder>(DIFF_CALLBACK), Filterable {
 
     companion object {
         const val VIEW_TYPE_APP = 0
         const val VIEW_TYPE_PRIVATE_HEADER = 1
+        const val VIEW_TYPE_CALCULATION = 2
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<AppModel>() {
             override fun areItemsTheSame(oldItem: AppModel, newItem: AppModel): Boolean = when {
@@ -48,6 +58,9 @@ class AppDrawerAdapter(
 
                 oldItem is AppModel.PinnedShortcut && newItem is AppModel.PinnedShortcut ->
                     oldItem.identity == newItem.identity
+
+                oldItem is AppModel.CalculationResult && newItem is AppModel.CalculationResult ->
+                    oldItem.expression == newItem.expression
 
                 oldItem is AppModel.PrivateSpaceHeader && newItem is AppModel.PrivateSpaceHeader -> true
 
@@ -62,6 +75,7 @@ class AppDrawerAdapter(
     private var autoLaunch = true
     private var isBangSearch = false
     var allowAutoLaunch = true
+    var currentCategory: String = Constants.Category.ALL
     private val diacriticsRegex = Regex("\\p{InCombiningDiacriticalMarks}+")
     private val separatorsRegex = Regex("[-_+,.`'\\s\\p{Z}]")
     private val appFilter = createAppFilter()
@@ -73,6 +87,7 @@ class AppDrawerAdapter(
     override fun getItemViewType(position: Int): Int {
         return when (appFilteredList.getOrNull(position)) {
             is AppModel.PrivateSpaceHeader -> VIEW_TYPE_PRIVATE_HEADER
+            is AppModel.CalculationResult -> VIEW_TYPE_CALCULATION
             else -> VIEW_TYPE_APP
         }
     }
@@ -81,6 +96,14 @@ class AppDrawerAdapter(
         return when (viewType) {
             VIEW_TYPE_PRIVATE_HEADER -> PrivateSpaceHeaderViewHolder(
                 AdapterPrivateSpaceHeaderBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+            )
+
+            VIEW_TYPE_CALCULATION -> CalculationViewHolder(
+                AdapterAppDrawerBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
@@ -110,6 +133,12 @@ class AppDrawerAdapter(
                     )
                 }
 
+                is CalculationViewHolder -> {
+                    if (appModel is AppModel.CalculationResult) {
+                        holder.bind(appModel, appLabelGravity)
+                    }
+                }
+
                 is ViewHolder -> holder.bind(
                     flag,
                     appLabelGravity,
@@ -119,7 +148,10 @@ class AppDrawerAdapter(
                     appDeleteListener,
                     appInfoListener,
                     appHideListener,
-                    appRenameListener
+                    appRenameListener,
+                    appPinListener,
+                    appLockListener,
+                    appFrictionListener
                 )
             }
         } catch (e: Exception) {
@@ -135,13 +167,38 @@ class AppDrawerAdapter(
                 isBangSearch = charSearch?.startsWith("!") ?: false
                 autoLaunch = allowAutoLaunch && (charSearch?.startsWith(" ")?.not() ?: true)
 
-                val appFilteredList = (if (charSearch.isNullOrBlank()) appsList
-                else appsList.filter { app ->
-                    app !is AppModel.PrivateSpaceHeader && appLabelMatches(app.appLabel, charSearch)
-                } as MutableList<AppModel>)
+                val resultList = mutableListOf<AppModel>()
+                val query = charSearch?.toString()?.trim() ?: ""
+
+                // 1. Check for calculation expression in search bar
+                val calcResult = CalculatorEngine.evaluate(query)
+                if (calcResult != null) {
+                    resultList.add(AppModel.CalculationResult(query, calcResult))
+                }
+
+                // 2. Filter apps by category if active
+                val categoryFiltered = if (currentCategory == Constants.Category.ALL) {
+                    appsList
+                } else {
+                    appsList.filter { it.categoryTag == currentCategory || it is AppModel.PrivateSpaceHeader }
+                }
+
+                if (query.isBlank()) {
+                    resultList.addAll(categoryFiltered)
+                } else {
+                    // 3. Fuzzy search matching
+                    val scoredApps = categoryFiltered.filter { app ->
+                        app !is AppModel.PrivateSpaceHeader && app !is AppModel.CalculationResult
+                    }.mapNotNull { app ->
+                        val score = FuzzySearchEngine.matchScore(app.appLabel, query)
+                        if (score > 0) Pair(app, score) else null
+                    }.sortedByDescending { it.second }.map { it.first }
+
+                    resultList.addAll(scoredApps)
+                }
 
                 val filterResults = FilterResults()
-                filterResults.values = appFilteredList
+                filterResults.values = resultList
                 return filterResults
             }
 
@@ -166,25 +223,14 @@ class AppDrawerAdapter(
                 && flag == Constants.FLAG_LAUNCH_APP
                 && appFilteredList.isNotEmpty()
                 && appFilteredList[0] !is AppModel.PrivateSpaceHeader
+                && appFilteredList[0] !is AppModel.CalculationResult
             ) appClickListener(appFilteredList[0])
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun appLabelMatches(appLabel: String, charSearch: CharSequence): Boolean {
-        if (appLabel.contains(charSearch.trim(), true)) return true
-        val query = charSearch.normalizeForSearch()
-        return query.isNotEmpty() && appLabel.normalizeForSearch().contains(query, true)
-    }
-
-    private fun CharSequence.normalizeForSearch(): String =
-        Normalizer.normalize(this, Normalizer.Form.NFD)
-            .replace(diacriticsRegex, "")
-            .replace(separatorsRegex, "")
-
     fun setAppList(appsList: MutableList<AppModel>) {
-        // Add empty app for bottom padding in recyclerview and assign to list
         appsList.add(
             AppModel.App(
                 appLabel = "",
@@ -201,8 +247,26 @@ class AppDrawerAdapter(
     }
 
     fun launchFirstInList() {
-        val first = appFilteredList.firstOrNull { it !is AppModel.PrivateSpaceHeader }
+        val first = appFilteredList.firstOrNull { it !is AppModel.PrivateSpaceHeader && it !is AppModel.CalculationResult }
         if (first != null) appClickListener(first)
+    }
+
+    class CalculationViewHolder(private val binding: AdapterAppDrawerBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(calc: AppModel.CalculationResult, appLabelGravity: Int) = with(binding) {
+            appHideLayout.visibility = View.GONE
+            renameLayout.visibility = View.GONE
+            appTitle.visibility = View.VISIBLE
+            otherProfileIndicator.visibility = View.GONE
+
+            appTitle.text = "${calc.expression} ${calc.result}"
+            appTitle.typeface = Typeface.MONOSPACE
+            appTitle.gravity = appLabelGravity
+            appTitle.setOnClickListener {
+                root.context.copyToClipboard(calc.result.removePrefix("= ").trim())
+                root.context.showToast("Result copied: ${calc.result}")
+            }
+        }
     }
 
     class PrivateSpaceHeaderViewHolder(private val binding: AdapterPrivateSpaceHeaderBinding) :
@@ -233,14 +297,18 @@ class AppDrawerAdapter(
             appInfoListener: (AppModel) -> Unit,
             appHideListener: (AppModel, Int) -> Unit,
             appRenameListener: (AppModel, String) -> Unit,
+            appPinListener: (AppModel) -> Unit = {},
+            appLockListener: (AppModel) -> Unit = {},
+            appFrictionListener: (AppModel) -> Unit = {}
         ) = with(binding) {
             appHideLayout.visibility = View.GONE
             renameLayout.visibility = View.GONE
             appTitle.visibility = View.VISIBLE
 
-            // Show indicators in title based on app type and state
             appTitle.text = buildString {
                 append(appModel.appLabel)
+                if (appModel.isBiometricLocked) append(" 🔒")
+                if (appModel.isFrictionEnabled) append(" ⏳")
                 if (appModel.isNew) append(" ✦")
             }
             appTitle.gravity = appLabelGravity
@@ -266,13 +334,11 @@ class AppDrawerAdapter(
                         false -> 1.0f
                     }
                     appHideLayout.visibility = View.VISIBLE
-                    // Only allow renaming non hidden apps
                     appRename.isVisible = flag != Constants.FLAG_HIDDEN_APPS
                 }
                 true
             }
 
-            // Configure rename behavior
             appRename.setOnClickListener {
                 if (appModel.appPackage.isNotEmpty()) {
                     etAppRename.hint = getAppName(etAppRename.context, appModel.appPackage, appModel.user)
@@ -292,14 +358,7 @@ class AppDrawerAdapter(
                     etAppRename.hint = getAppName(etAppRename.context, appModel.appPackage, appModel.user)
                 }
 
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int,
-                ) {
-                }
-
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                     etAppRename.hint = ""
                 }
@@ -355,7 +414,7 @@ class AppDrawerAdapter(
                     ).toString()
                 }
             } catch (_: Exception) {
-                "" // As a fallback, display an empty string.
+                ""
             }
         }
     }

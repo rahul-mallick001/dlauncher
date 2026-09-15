@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdk 36
+    compileSdk 35
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId "app.olauncher"
         minSdkVersion 24
-        targetSdkVersion 36
+        targetSdkVersion 35
         versionCode 112
         versionName "v6.9.1"
 
@@ -63,6 +63,9 @@ dependencies {
 
     //Material dependency
     implementation libs.material
+
+    // Biometric security
+    implementation libs.biometric
 
     testImplementation libs.junit
 }

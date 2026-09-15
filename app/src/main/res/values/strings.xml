@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name" translatable="false">Olauncher</string>
+    <string name="app_name" translatable="false">Dlauncher</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <!-- Home button for recents feature disabled -->
     <!-- <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string> -->
-    <string name="olauncher_pro" translatable="false">Olauncher Pro</string>
+    <string name="olauncher_pro" translatable="false">Dlauncher</string>
     <string name="digital_minimalism" translatable="false"><u>Digital Minimalism</u></string>
     <string name="new_app_note_safe" translatable="false"><u>Note to Self</u>\n<sub><small>(Ad-Free)</small></sub></string>
     <string name="new_app_minimal_todo_lists" translatable="false"><u>Minimal Todo Lists</u>\n<sub><small>(Ad-Free)</small></sub></string>
@@ -27,11 +27,11 @@
     <string name="app">App</string>
     <string name="set_as_default_launcher">Set as default launcher</string>
     <string name="set_as_default_launcher_u"><u>Set as default launcher</u></string>
-    <string name="set_as_default_launcher_first">Set Olauncher default first</string>
+    <string name="set_as_default_launcher_first">Set Dlauncher default first</string>
     <string name="app_text_color">Text color</string>
     <string name="double_tap_to_lock_screen">Double tap to lock</string>
     <string name="home_button_show_recents">Home button for recents</string>
-    <string name="admin_permission_message">Olauncher promises to use the accessibility permission responsibly. Olauncher does not collect or share any data.</string>
+    <string name="admin_permission_message">Dlauncher promises to use the accessibility permission responsibly. Dlauncher does not collect or share any data.</string>
     <string name="about">About</string>
     <string name="off">Off</string>
     <string name="on">On</string>
@@ -145,14 +145,14 @@
     <string name="swipe_left_app_disabled">Swipe left app disabled</string>
     <string name="swipe_right_app_disabled">Swipe right app disabled</string>
     <string name="your_wallpaper_will_update_shortly">Your wallpaper will update shortly</string>
-    <string name="olauncher_is_not_default_launcher">Olauncher is not default. Wallpaper update will fail.</string>
+    <string name="olauncher_is_not_default_launcher">Dlauncher is not default. Wallpaper update will fail.</string>
     <string name="long_press_to_enable">Long press to enable</string>
     <string name="no_hidden_apps">No hidden apps</string>
     <string name="hidden_apps">Hidden apps</string>
     <string name="adapter_show">Show</string>
     <string name="adapter_hide">Hide</string>
     <string name="are_you_using_your_phone_or_is_your_phone_using_you">Are you using your phone, or is your phone using you?</string>
-    <string name="about_olauncher">About and FAQs</string>
+    <string name="about_olauncher">About Dlauncher</string>
     <string name="screen_time">Screen time</string>
     <string name="learn_more">Learn more</string>
     <string name="did_you_know">Did you know?</string>
@@ -176,4 +176,100 @@
     <string name="invalid_shortcut">Invalid shortcut</string>
     <string name="shortcut_not_found">Shortcut not found</string>
     <string name="unable_to_open_shortcut">Unable to open shortcut</string>
+
+    <!-- New Feature & Redesign Strings -->
+    <string name="tag_9" translatable="false">9</string>
+    <string name="tag_10" translatable="false">10</string>
+    <string name="tag_11" translatable="false">11</string>
+    <string name="tag_12" translatable="false">12</string>
+    <string name="tag_13" translatable="false">13</string>
+    <string name="tag_14" translatable="false">14</string>
+    <string name="tag_15" translatable="false">15</string>
+    <string name="_9">9</string>
+    <string name="_10">10</string>
+    <string name="_11">11</string>
+    <string name="_12">12</string>
+    <string name="_13">13</string>
+    <string name="_14">14</string>
+    <string name="_15">15</string>
+
+    <string name="font_family">Typography</string>
+    <string name="font_system">System</string>
+    <string name="font_monospace">Monospace</string>
+    <string name="font_sans">Sans-Serif</string>
+    <string name="font_serif">Serif</string>
+    <string name="font_rounded">Rounded</string>
+    <string name="font_condensed">Condensed</string>
+
+    <string name="accent_theme">Color Accent</string>
+    <string name="accent_monochrome">Monochrome</string>
+    <string name="accent_emerald">Emerald Green</string>
+    <string name="accent_lavender">Lavender</string>
+    <string name="accent_amber">Warm Amber</string>
+    <string name="accent_crimson">Crimson</string>
+    <string name="accent_glacier">Glacier Blue</string>
+    <string name="accent_amoled">AMOLED Pure Black</string>
+
+    <string name="home_columns">Home Columns</string>
+    <string name="columns_1">1 Column</string>
+    <string name="columns_2">2 Columns</string>
+
+    <string name="fuzzy_search">Fuzzy Search (Typo tolerant)</string>
+    <string name="calculator_in_search">In-Search Calculator</string>
+    <string name="search_shortcuts">Web Shortcuts (g, y, w, !)</string>
+    <string name="biometric_lock">Biometric / PIN Lock</string>
+    <string name="friction_mode">Mindful Pause / Friction</string>
+    <string name="friction_duration">Pause Duration</string>
+    <string name="custom_note">Daily Note / Quote</string>
+    <string name="categories">Categories &amp; Tags</string>
+    <string name="all_apps">All</string>
+    <string name="favorites">Favorites</string>
+    <string name="work">Work</string>
+    <string name="social">Social</string>
+    <string name="tools">Tools</string>
+    <string name="media">Media</string>
+    <string name="games">Games</string>
+    <string name="lock_app">Lock with Biometrics</string>
+    <string name="unlock_app">Remove Lock</string>
+    <string name="add_friction">Enable Mindful Pause</string>
+    <string name="remove_friction">Disable Mindful Pause</string>
+    <string name="set_category">Assign Category</string>
+    <string name="pin_to_home">Pin to Home</string>
+
+    <!-- Home To-Do Widget -->
+    <string name="todays_priorities">TODAY\'S PRIORITIES</string>
+    <string name="add_todo_btn">+ ADD</string>
+    <string name="no_priorities_set">No priorities set. Tap + to set your focus.</string>
+    <string name="add_priority_title">New Priority</string>
+    <string name="add_priority_hint">What is your main focus?</string>
+    <string name="more_priorities">+%1$d more priorities...</string>
+    <string name="all_completed">ALL DONE ✓</string>
+    <string name="todo">To-Do</string>
+    <string name="cancel">Cancel</string>
+    <string name="add">Add</string>
+
+    <!-- AMOLED Lock Screen -->
+    <string name="amoled_lock_screen">AMOLED Lock Screen</string>
+    <string name="amoled_lock_screen_subtext">Pure black lock screen wallpaper</string>
+    <string name="apply">Apply</string>
+    <string name="amoled_lock_screen_applied">AMOLED Lock Screen applied!</string>
+    <string name="failed_to_set_lock_screen">Failed to update lock screen</string>
+
+    <!-- About & Atomic Habits Philosophy -->
+    <string name="about_dlauncher">About Dlauncher</string>
+    <string name="about_dlauncher_subtext">Based on Atomic Habits: Invert laws to break bad habits</string>
+    <string name="atomic_habits_badge">ATOMIC HABITS PHILOSOPHY</string>
+    <string name="atomic_habits_quote_1">“The inversion of the 3rd Law of Behavior Change is make it difficult. Increase the friction associated with bad behaviors. When friction is high, habits are difficult.”</string>
+    <string name="atomic_habits_quote_2">“The best way to break a bad habit is to make it impractical to do. Increase the friction until you don\'t even have the option to act.”</string>
+    <string name="atomic_habits_citation">— James Clear, Atomic Habits</string>
+    <string name="atomic_habits_breakdown_title">How Dlauncher Breaks Bad Habits</string>
+    <string name="atomic_habits_law_1_title">1. Make it Invisible (1st Law Inversion)</string>
+    <string name="atomic_habits_law_1_desc">Eliminates colorful icons, notification dots, and visual cues that tempt your attention.</string>
+    <string name="atomic_habits_law_2_title">2. Make it Unattractive (2nd Law Inversion)</string>
+    <string name="atomic_habits_law_2_desc">Pure AMOLED monochrome aesthetics strip away gamified dopamine and flashy app aesthetics.</string>
+    <string name="atomic_habits_law_3_title">3. Make it Difficult (3rd Law Inversion)</string>
+    <string name="atomic_habits_law_3_desc">High-friction 5-Stage Vault with Screen Time reflection, To-Do verification, and 3FA authentication (Biometrics + Pattern + PIN) to guard addictive apps.</string>
+    <string name="atomic_habits_law_4_title">4. Make it Unsatisfying (4th Law Inversion)</string>
+    <string name="atomic_habits_law_4_desc">Large screen-time counter and home-screen daily priority checklist immediately confront you with the real cost of mindless phone use.</string>
+    <string name="about_dismiss">Close</string>
 </resources>

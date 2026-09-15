@@ -24,6 +24,9 @@ import app.olauncher.data.AppModel
 import app.olauncher.data.Constants
 import app.olauncher.data.Prefs
 import app.olauncher.databinding.FragmentAppDrawerBinding
+import app.olauncher.helper.BiometricHelper
+import app.olauncher.helper.FrictionHelper
+import app.olauncher.helper.WebSearchHelper
 import app.olauncher.helper.deletePinnedShortcut
 import app.olauncher.helper.hideKeyboard
 import app.olauncher.helper.isEinkDisplay
@@ -72,6 +75,7 @@ class AppDrawerFragment : BaseFragment() {
             canRename = it.getBoolean(Constants.Key.RENAME, false)
         }
 
+        checkBiometricAuthForHiddenApps()
         initViews()
         initSearch()
         initAdapter()
@@ -79,10 +83,25 @@ class AppDrawerFragment : BaseFragment() {
         initClickListeners()
     }
 
+    private fun checkBiometricAuthForHiddenApps() {
+        if (flag == Constants.FLAG_HIDDEN_APPS && prefs.biometricLockEnabled) {
+            BiometricHelper.authenticate(
+                activity = requireActivity(),
+                title = "Hidden Apps Vault",
+                subtitle = "Authenticate to access hidden apps",
+                onSuccess = { /* allowed */ },
+                onError = {
+                    requireContext().showToast("Authentication required to view hidden apps")
+                    findNavController().popBackStack()
+                }
+            )
+        }
+    }
+
     private fun initViews() {
         if (flag == Constants.FLAG_HIDDEN_APPS)
             binding.search.queryHint = getString(R.string.hidden_apps)
-        else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_CALENDAR_APP)
+        else if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_15)
             binding.search.queryHint = "Please select an app"
         try {
             searchTextView = binding.search.findViewById(R.id.search_src_text)
@@ -95,12 +114,23 @@ class AppDrawerFragment : BaseFragment() {
     private fun initSearch() {
         binding.search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                if (query?.startsWith("!") == true)
+                if (query.isNullOrBlank()) return false
+
+                // 1. Check custom search engine prefix (e.g. g query, y query, !query)
+                val customSearch = WebSearchHelper.parseCustomSearch(query)
+                if (customSearch != null && prefs.searchShortcuts) {
+                    val (engine, actualQuery) = customSearch
+                    WebSearchHelper.executeSearch(requireContext(), engine, actualQuery)
+                    return true
+                }
+
+                if (query.startsWith("!")) {
                     requireContext().openUrl(Constants.URL_DUCK_SEARCH + query.replace(" ", "%20"))
-                else if (adapter.itemCount == 0)
-                    requireContext().openSearch(query?.trim())
-                else
+                } else if (adapter.itemCount == 0) {
+                    requireContext().openSearch(query.trim())
+                } else {
                     adapter.launchFirstInList()
+                }
                 return true
             }
 
@@ -135,8 +165,8 @@ class AppDrawerFragment : BaseFragment() {
             val subtype = imm.currentInputMethodSubtype
             val language = when {
                 subtype == null -> ""
-                subtype.languageTag.isNotEmpty() -> subtype.languageTag // e.g. "zh-CN", "ja-JP", "en-US"
-                else -> subtype.locale // deprecated fallback, e.g. "zh_CN"
+                subtype.languageTag.isNotEmpty() -> subtype.languageTag
+                else -> subtype.locale
             }
             language.startsWith("zh") || language.startsWith("ja") || language.startsWith("ko")
         } catch (e: Exception) {
@@ -148,26 +178,18 @@ class AppDrawerFragment : BaseFragment() {
 
     private fun initAdapter() {
         adapter = AppDrawerAdapter(
-            flag,
-            prefs.appLabelAlignment,
+            flag = flag,
+            appLabelGravity = prefs.appLabelAlignment,
             appClickListener = { appModel ->
-                viewModel.selectedApp(appModel, flag)
-                if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
-                    findNavController().popBackStack(R.id.mainFragment, false)
-                else
-                    findNavController().popBackStack()
+                handleAppClick(appModel)
             },
             appInfoListener = {
-                openAppInfo(
-                    requireContext(),
-                    it.user,
-                    it.appPackage
-                )
+                openAppInfo(requireContext(), it.user, it.appPackage)
                 findNavController().popBackStack(R.id.mainFragment, false)
             },
             appDeleteListener = { appModel ->
                 when (appModel) {
-                    is AppModel.PrivateSpaceHeader -> {}
+                    is AppModel.PrivateSpaceHeader, is AppModel.CalculationResult -> {}
                     is AppModel.PinnedShortcut ->
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
                             requireContext().deletePinnedShortcut(
@@ -261,9 +283,57 @@ class AppDrawerFragment : BaseFragment() {
                 AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_anim_from_bottom)
     }
 
-    private fun initObservers() {
-        viewModel.firstOpen.observe(viewLifecycleOwner) {
+    private fun handleAppClick(appModel: AppModel) {
+        if (appModel is AppModel.CalculationResult || appModel is AppModel.PrivateSpaceHeader) return
+
+        val proceedLaunch = {
+            viewModel.selectedApp(appModel, flag)
+            if (flag == Constants.FLAG_LAUNCH_APP || flag == Constants.FLAG_HIDDEN_APPS)
+                findNavController().popBackStack(R.id.mainFragment, false)
+            else
+                findNavController().popBackStack()
         }
+
+        val checkFrictionAndLaunch = {
+            if (prefs.frictionModeEnabled && prefs.isAppFrictionEnabled(appModel.appPackage)) {
+                FrictionHelper.showMindfulPauseDialog(
+                    context = requireContext(),
+                    appName = appModel.appLabel,
+                    durationSeconds = prefs.frictionDuration,
+                    onProceed = { proceedLaunch() }
+                )
+            } else {
+                proceedLaunch()
+            }
+        }
+
+        // Check Restricted Vault Protection
+        val vaultManager = app.olauncher.helper.VaultManager(requireContext())
+        if (flag == Constants.FLAG_LAUNCH_APP && vaultManager.isAppProtected(appModel.appPackage)) {
+            val challengeDialog = app.olauncher.ui.vault.VaultChallengeDialogFragment.newInstance(appModel.appLabel, appModel.appPackage)
+            challengeDialog.setOnUnlockListener(object : app.olauncher.ui.vault.VaultChallengeDialogFragment.OnUnlockListener {
+                override fun onUnlocked() {
+                    checkFrictionAndLaunch()
+                }
+            })
+            challengeDialog.show(parentFragmentManager, "VAULT_CHALLENGE")
+            return
+        }
+
+        if (prefs.biometricLockEnabled && prefs.isAppBiometricLocked(appModel.appPackage)) {
+            BiometricHelper.authenticate(
+                activity = requireActivity(),
+                title = "Unlock ${appModel.appLabel}",
+                onSuccess = { checkFrictionAndLaunch() },
+                onError = { err -> requireContext().showToast(err) }
+            )
+        } else {
+            checkFrictionAndLaunch()
+        }
+    }
+
+    private fun initObservers() {
+        viewModel.firstOpen.observe(viewLifecycleOwner) {}
         if (flag == Constants.FLAG_HIDDEN_APPS) {
             viewModel.hiddenApps.observe(viewLifecycleOwner) {
                 it?.let {
@@ -316,15 +386,8 @@ class AppDrawerFragment : BaseFragment() {
                 return@setOnClickListener
             }
 
-            when (flag) {
-                Constants.FLAG_SET_HOME_APP_1 -> prefs.appName1 = name
-                Constants.FLAG_SET_HOME_APP_2 -> prefs.appName2 = name
-                Constants.FLAG_SET_HOME_APP_3 -> prefs.appName3 = name
-                Constants.FLAG_SET_HOME_APP_4 -> prefs.appName4 = name
-                Constants.FLAG_SET_HOME_APP_5 -> prefs.appName5 = name
-                Constants.FLAG_SET_HOME_APP_6 -> prefs.appName6 = name
-                Constants.FLAG_SET_HOME_APP_7 -> prefs.appName7 = name
-                Constants.FLAG_SET_HOME_APP_8 -> prefs.appName8 = name
+            if (flag in Constants.FLAG_SET_HOME_APP_1..Constants.FLAG_SET_HOME_APP_15) {
+                prefs.setAppName(flag, name)
             }
             findNavController().popBackStack()
         }
@@ -332,17 +395,14 @@ class AppDrawerFragment : BaseFragment() {
 
     private fun getRecyclerViewOnScrollListener(): RecyclerView.OnScrollListener {
         return object : RecyclerView.OnScrollListener() {
-
             var onTop = false
 
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 when (newState) {
-
                     RecyclerView.SCROLL_STATE_DRAGGING -> {
                         onTop = !recyclerView.canScrollVertically(-1)
-                        if (onTop)
-                            binding.search.hideKeyboard()
+                        if (onTop) binding.search.hideKeyboard()
                     }
 
                     RecyclerView.SCROLL_STATE_IDLE -> {

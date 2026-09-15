@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_amoled_background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Header -->
+        <TextView
+            android:id="@+id/tvVaultTargetApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textSize="20sp"
+            android:textColor="?attr/primaryColor"
+            tools:text="RESTRICTED: Instagram" />
+
+        <TextView
+            android:id="@+id/tvVaultStageHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="monospace"
+            android:textSize="15sp"
+            android:textColor="?attr/primaryColorTrans70"
+            tools:text="STAGE 1 OF 5: SCREEN TIME CHECK" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/primaryColorTrans50" />
+
+        <!-- STAGE 1: Screen Time Question -->
+        <LinearLayout
+            android:id="@+id/containerStage1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="18sp"
+                android:textColor="?attr/primaryColor"
+                android:text="Question 1:\nHow many hours have you spent on your phone today?" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="16sp"
+                android:textColor="?attr/primaryColorTrans70"
+                android:text="Confront your screen time. Enter your exact usage in whole hours to prove awareness." />
+
+            <EditText
+                android:id="@+id/etScreenTimeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:inputType="number"
+                android:gravity="center"
+                android:textSize="24sp"
+                android:fontFamily="monospace"
+                android:hint="e.g. 3"
+                android:textColor="?attr/primaryColor"
+                android:textColorHint="?attr/primaryColorTrans50" />
+
+            <Button
+                android:id="@+id/btnSubmitScreenTime"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
+                android:textSize="16sp"
+                android:text="Verify Awareness" />
+        </LinearLayout>
+
+        <!-- STAGE 2: Todo Reflection -->
+        <LinearLayout
+            android:id="@+id/containerStage2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="18sp"
+                android:textColor="?attr/primaryColor"
+                android:text="Question 2:\nDid you complete your daily priorities?" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="16sp"
+                android:textColor="?attr/primaryColorTrans70"
+                android:text="You must complete all daily tasks before opening distracting apps." />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvChallengeTodos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:maxHeight="200dp" />
+
+            <Button
+                android:id="@+id/btnSubmitTodos"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
+                android:textSize="16sp"
+                android:text="Confirm All Completed" />
+        </LinearLayout>
+
+        <!-- STAGE 3: Biometric -->
+        <LinearLayout
+            android:id="@+id/containerStage3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="18sp"
+                android:textColor="?attr/primaryColor"
+                android:text="Factor 1: Biometric Check" />
+
+            <TextView
+                android:id="@+id/tvBiometricDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="16sp"
+                android:textColor="?attr/primaryColorTrans70"
+                android:text="Touch the fingerprint sensor or use face recognition." />
+
+            <Button
+                android:id="@+id/btnScanBiometrics"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="20dp"
+                android:textSize="16sp"
+                android:text="Scan Fingerprint" />
+        </LinearLayout>
+
+        <!-- STAGE 4: Pattern Lock -->
+        <LinearLayout
+            android:id="@+id/containerStage4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="18sp"
+                android:textColor="?attr/primaryColor"
+                android:text="Factor 2: Security Pattern" />
+
+            <TextView
+                android:id="@+id/tvPatternPrompt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="16sp"
+                android:textColor="?attr/primaryColorTrans70"
+                android:text="Connect dots to draw your master pattern." />
+
+            <app.olauncher.ui.vault.PatternLockView
+                android:id="@+id/vaultPatternLockView"
+                android:layout_width="260dp"
+                android:layout_height="260dp"
+                android:layout_marginTop="16dp"
+                android:layout_gravity="center_horizontal" />
+        </LinearLayout>
+
+        <!-- STAGE 5: Master PIN -->
+        <LinearLayout
+            android:id="@+id/containerStage5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="18sp"
+                android:textColor="?attr/primaryColor"
+                android:text="Factor 3: Master PIN" />
+
+            <TextView
+                android:id="@+id/tvPinStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="16sp"
+                android:textColor="?attr/primaryColorTrans70"
+                android:text="Enter your master security PIN" />
+
+            <TextView
+                android:id="@+id/tvPinDisplay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.4"
+                android:textSize="26sp"
+                android:textColor="?attr/primaryColor"
+                android:text="• • • •" />
+
+            <GridLayout
+                android:id="@+id/gridPinPad"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:columnCount="3"
+                android:rowCount="4"
+                android:alignmentMode="alignMargins">
+
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey1" android:text="1" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey2" android:text="2" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey3" android:text="3" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey4" android:text="4" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey5" android:text="5" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey6" android:text="6" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey7" android:text="7" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey8" android:text="8" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey9" android:text="9" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKeyClear" android:text="C" android:textSize="16sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKey0" android:text="0" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+                <Button style="@style/Widget.MaterialComponents.Button.TextButton" android:id="@+id/btnKeyDel" android:text="⌫" android:textSize="20sp" android:layout_width="0dp" android:layout_height="56dp" android:layout_columnWeight="1" />
+            </GridLayout>
+        </LinearLayout>
+
+        <!-- Bottom Give Up Button -->
+        <Button
+            android:id="@+id/btnVaultCancel"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="16sp"
+            android:text="Give Up &amp; Stay Focused"
+            android:textColor="?attr/primaryColorTrans70" />
+
+    </LinearLayout>
+</ScrollView>

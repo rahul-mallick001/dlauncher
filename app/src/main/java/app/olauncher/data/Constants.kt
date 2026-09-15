@@ -1,4 +1,4 @@
-package app.olauncher.data
+﻿package app.olauncher.data
 
 object Constants {
 
@@ -17,6 +17,8 @@ object Constants {
         const val KEYBOARD = "KEYBOARD"
         const val DIGITAL_WELLBEING = "DIGITAL_WELLBEING"
         const val PRO_MESSAGE = "PRO_MESSAGE"
+        const val FRICTION_INFO = "FRICTION_INFO"
+        const val BIOMETRIC_INFO = "BIOMETRIC_INFO"
     }
 
     object UserState {
@@ -44,12 +46,52 @@ object Constants {
     object SwipeDownAction {
         const val SEARCH = 1
         const val NOTIFICATIONS = 2
+        const val QUICK_SETTINGS = 3
     }
 
     object CharacterIndicator {
         const val SHOW = 102
         const val HIDE = 101
     }
+
+    object Font {
+        const val SYSTEM = 0
+        const val MONOSPACE = 1
+        const val SANS_SERIF = 2
+        const val SERIF = 3
+        const val ROUNDED = 4
+        const val CONDENSED = 5
+    }
+
+    object AccentTheme {
+        const val MONOCHROME = 0
+        const val EMERALD = 1
+        const val LAVENDER = 2
+        const val AMBER = 3
+        const val CRIMSON = 4
+        const val GLACIER = 5
+        const val AMOLED_PURE_BLACK = 6
+    }
+
+    object Category {
+        const val ALL = "All"
+        const val FAVORITES = "Favorites"
+        const val WORK = "Work"
+        const val SOCIAL = "Social"
+        const val TOOLS = "Tools"
+        const val MEDIA = "Media"
+        const val GAMES = "Games"
+    }
+
+    val DEFAULT_CATEGORIES = listOf(
+        Category.ALL,
+        Category.FAVORITES,
+        Category.WORK,
+        Category.SOCIAL,
+        Category.TOOLS,
+        Category.MEDIA,
+        Category.GAMES
+    )
 
     val CLOCK_APP_PACKAGES = arrayOf(
         "com.google.android.deskclock", //Google Clock
@@ -60,10 +102,6 @@ object Constants {
 
     const val WALL_TYPE_LIGHT = "light"
     const val WALL_TYPE_DARK = "dark"
-
-//    const val THEME_MODE_DARK = 0
-//    const val THEME_MODE_LIGHT = 1
-//    const val THEME_MODE_SYSTEM = 2
 
     const val FLAG_LAUNCH_APP = 100
     const val FLAG_HIDDEN_APPS = 101
@@ -76,12 +114,19 @@ object Constants {
     const val FLAG_SET_HOME_APP_6 = 6
     const val FLAG_SET_HOME_APP_7 = 7
     const val FLAG_SET_HOME_APP_8 = 8
+    const val FLAG_SET_HOME_APP_9 = 9
+    const val FLAG_SET_HOME_APP_10 = 10
+    const val FLAG_SET_HOME_APP_11 = 11
+    const val FLAG_SET_HOME_APP_12 = 12
+    const val FLAG_SET_HOME_APP_13 = 13
+    const val FLAG_SET_HOME_APP_14 = 14
+    const val FLAG_SET_HOME_APP_15 = 15
 
-    const val FLAG_SET_SWIPE_LEFT_APP = 11
-    const val FLAG_SET_SWIPE_RIGHT_APP = 12
-    const val FLAG_SET_CLOCK_APP = 13
-    const val FLAG_SET_CALENDAR_APP = 14
-    const val FLAG_SET_SCREEN_TIME_APP = 15
+    const val FLAG_SET_SWIPE_LEFT_APP = 21
+    const val FLAG_SET_SWIPE_RIGHT_APP = 22
+    const val FLAG_SET_CLOCK_APP = 23
+    const val FLAG_SET_CALENDAR_APP = 24
+    const val FLAG_SET_SCREEN_TIME_APP = 25
 
     const val REQUEST_CODE_ENABLE_ADMIN = 666
     const val REQUEST_CODE_LAUNCHER_SELECTOR = 678

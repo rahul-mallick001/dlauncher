@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_amoled_background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textSize="20sp"
+            android:textColor="?attr/primaryColor"
+            android:text="Restricted Vault &amp; Focus" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="16sp"
+            android:textColor="?attr/primaryColorTrans70"
+            android:text="Eliminate phone addiction with extreme friction." />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/primaryColorTrans50" />
+
+        <!-- Toggles -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchAutoSocialBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Auto-Block Social Media\n(Instagram, TikTok, YouTube, etc.)"
+            android:textColor="?attr/primaryColor"
+            android:textSize="16sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch3FA"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Triple-Factor Auth (3FA)\n(Biometrics + Pattern + PIN)"
+            android:textColor="?attr/primaryColor"
+            android:textSize="16sp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchQA"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Reflection Q&amp;A\n(Screen Time &amp; Todo Check)"
+            android:textColor="?attr/primaryColor"
+            android:textSize="16sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/primaryColorTrans50" />
+
+        <!-- Action Buttons -->
+        <Button
+            android:id="@+id/btnSetPin"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:textSize="16sp"
+            android:text="Set Master PIN" />
+
+        <Button
+            android:id="@+id/btnSetPattern"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:textSize="16sp"
+            android:text="Set Master Pattern" />
+
+        <Button
+            android:id="@+id/btnManageTodos"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:textSize="16sp"
+            android:text="Manage Daily Priorities / Todos" />
+
+        <Button
+            android:id="@+id/btnCloseVaultSettings"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="16sp"
+            android:text="Done" />
+
+    </LinearLayout>
+</ScrollView>

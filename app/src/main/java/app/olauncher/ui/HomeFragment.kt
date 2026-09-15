@@ -1,10 +1,15 @@
 package app.olauncher.ui
 
+import android.app.Dialog
 import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
@@ -12,8 +17,14 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.view.WindowInsets
+import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -30,6 +41,9 @@ import app.olauncher.data.AppModel
 import app.olauncher.data.Constants
 import app.olauncher.data.Prefs
 import app.olauncher.databinding.FragmentHomeBinding
+import app.olauncher.helper.BiometricHelper
+import app.olauncher.helper.FrictionHelper
+import app.olauncher.helper.VaultManager
 import app.olauncher.helper.appUsagePermissionGranted
 import app.olauncher.helper.dpToPx
 import app.olauncher.helper.expandNotificationDrawer
@@ -45,6 +59,7 @@ import app.olauncher.helper.setPlainWallpaperByTheme
 import app.olauncher.helper.showToast
 import app.olauncher.listener.OnSwipeTouchListener
 import app.olauncher.listener.ViewSwipeTouchListener
+import app.olauncher.ui.vault.TodoListDialogFragment
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -54,9 +69,19 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     private lateinit var prefs: Prefs
     private lateinit var viewModel: MainViewModel
     private lateinit var deviceManager: DevicePolicyManager
+    private lateinit var vaultManager: VaultManager
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+
+    private val homeAppViews by lazy {
+        listOf(
+            binding.homeApp1, binding.homeApp2, binding.homeApp3, binding.homeApp4,
+            binding.homeApp5, binding.homeApp6, binding.homeApp7, binding.homeApp8,
+            binding.homeApp9, binding.homeApp10, binding.homeApp11, binding.homeApp12,
+            binding.homeApp13, binding.homeApp14, binding.homeApp15
+        )
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
@@ -71,16 +96,21 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         } ?: throw Exception("Invalid Activity")
 
         deviceManager = context?.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        vaultManager = VaultManager(requireContext())
 
         initObservers()
         setHomeAlignment(prefs.homeAlignment)
+        applyTypography()
         initSwipeTouchListener()
         initClickListeners()
+        setupTodoWidget()
     }
 
     override fun onResume() {
         super.onResume()
+        applyTypography()
         populateHomeScreen(false)
+        populateTodoWidget()
         viewModel.isOlauncherDefault()
         if (prefs.showStatusBar) showStatusBar()
         else hideStatusBar()
@@ -89,15 +119,13 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     override fun onClick(view: View) {
         when (view.id) {
             R.id.lock -> {}
-            // Home button for recents feature disabled
-            // R.id.recents -> {}
             R.id.clock -> openClockApp()
             R.id.date -> openCalendarApp()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
 
             else -> {
-                try { // Launch app
+                try {
                     val appLocation = view.tag.toString().toInt()
                     homeAppClicked(appLocation)
                 } catch (e: Exception) {
@@ -111,36 +139,27 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         if (prefs.clockAppPackage.isBlank())
             openAlarmApp(requireContext())
         else
-            launchApp(
-                "Clock",
-                prefs.clockAppPackage,
-                prefs.clockAppClassName,
-                prefs.clockAppUser
-            )
+            launchApp("Clock", prefs.clockAppPackage, prefs.clockAppClassName, prefs.clockAppUser)
     }
 
     private fun openCalendarApp() {
         if (prefs.calendarAppPackage.isBlank())
             openCalendar(requireContext())
         else
-            launchApp(
-                "Calendar",
-                prefs.calendarAppPackage,
-                prefs.calendarAppClassName,
-                prefs.calendarAppUser
-            )
+            launchApp("Calendar", prefs.calendarAppPackage, prefs.calendarAppClassName, prefs.calendarAppUser)
     }
 
     override fun onLongClick(view: View): Boolean {
         when (view.id) {
-            R.id.homeApp1 -> showAppList(Constants.FLAG_SET_HOME_APP_1, prefs.appName1.isNotEmpty(), true)
-            R.id.homeApp2 -> showAppList(Constants.FLAG_SET_HOME_APP_2, prefs.appName2.isNotEmpty(), true)
-            R.id.homeApp3 -> showAppList(Constants.FLAG_SET_HOME_APP_3, prefs.appName3.isNotEmpty(), true)
-            R.id.homeApp4 -> showAppList(Constants.FLAG_SET_HOME_APP_4, prefs.appName4.isNotEmpty(), true)
-            R.id.homeApp5 -> showAppList(Constants.FLAG_SET_HOME_APP_5, prefs.appName5.isNotEmpty(), true)
-            R.id.homeApp6 -> showAppList(Constants.FLAG_SET_HOME_APP_6, prefs.appName6.isNotEmpty(), true)
-            R.id.homeApp7 -> showAppList(Constants.FLAG_SET_HOME_APP_7, prefs.appName7.isNotEmpty(), true)
-            R.id.homeApp8 -> showAppList(Constants.FLAG_SET_HOME_APP_8, prefs.appName8.isNotEmpty(), true)
+            in homeAppViews.map { it.id } -> {
+                val index = homeAppViews.indexOfFirst { it.id == view.id }
+                if (index >= 0) {
+                    val location = index + 1
+                    val flag = Constants.FLAG_SET_HOME_APP_1 + index
+                    showAppList(flag, prefs.getAppName(location).isNotEmpty(), true)
+                }
+            }
+
             R.id.clock -> {
                 showAppList(Constants.FLAG_SET_CLOCK_APP)
                 prefs.clockAppPackage = ""
@@ -174,6 +193,22 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         return true
     }
 
+    private fun applyTypography() {
+        val typeface = when (prefs.fontFamily) {
+            Constants.Font.MONOSPACE -> Typeface.MONOSPACE
+            Constants.Font.SANS_SERIF -> Typeface.SANS_SERIF
+            Constants.Font.SERIF -> Typeface.SERIF
+            Constants.Font.ROUNDED -> Typeface.create("sans-serif-rounded", Typeface.NORMAL)
+            Constants.Font.CONDENSED -> Typeface.create("sans-serif-condensed", Typeface.NORMAL)
+            else -> Typeface.DEFAULT
+        }
+
+        binding.clock.typeface = typeface
+        binding.date.typeface = typeface
+        binding.tvScreenTime.typeface = typeface
+        homeAppViews.forEach { it.typeface = typeface }
+    }
+
     private fun initObservers() {
         if (prefs.firstSettingsOpen) {
             binding.firstRunTips.visibility = View.VISIBLE
@@ -204,29 +239,18 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         viewModel.screenTimeValue.observe(viewLifecycleOwner) {
             it?.let { binding.tvScreenTime.text = it }
         }
-        // Home button for recents feature disabled
-        // viewModel.showRecentApps.observe(viewLifecycleOwner) {
-        //     binding.recents.performClick()
-        // }
     }
 
     private fun initSwipeTouchListener() {
         val context = requireContext()
         binding.mainLayout.setOnTouchListener(getSwipeGestureListener(context))
-        binding.homeApp1.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp1))
-        binding.homeApp2.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp2))
-        binding.homeApp3.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp3))
-        binding.homeApp4.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp4))
-        binding.homeApp5.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp5))
-        binding.homeApp6.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp6))
-        binding.homeApp7.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp7))
-        binding.homeApp8.setOnTouchListener(getViewSwipeTouchListener(context, binding.homeApp8))
+        homeAppViews.forEach { textView ->
+            textView.setOnTouchListener(getViewSwipeTouchListener(context, textView))
+        }
     }
 
     private fun initClickListeners() {
         binding.lock.setOnClickListener(this)
-        // Home button for recents feature disabled
-        // binding.recents.setOnClickListener(this)
         binding.clock.setOnClickListener(this)
         binding.date.setOnClickListener(this)
         binding.clock.setOnLongClickListener(this)
@@ -236,37 +260,17 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         binding.tvScreenTime.setOnClickListener(this)
         binding.tvScreenTime.setOnLongClickListener(this)
 
-        // These fire only on d-pad/keyboard events; touch is consumed by ViewSwipeTouchListener
-        binding.homeApp1.setOnClickListener(this)
-        binding.homeApp2.setOnClickListener(this)
-        binding.homeApp3.setOnClickListener(this)
-        binding.homeApp4.setOnClickListener(this)
-        binding.homeApp5.setOnClickListener(this)
-        binding.homeApp6.setOnClickListener(this)
-        binding.homeApp7.setOnClickListener(this)
-        binding.homeApp8.setOnClickListener(this)
-        binding.homeApp1.setOnLongClickListener(this)
-        binding.homeApp2.setOnLongClickListener(this)
-        binding.homeApp3.setOnLongClickListener(this)
-        binding.homeApp4.setOnLongClickListener(this)
-        binding.homeApp5.setOnLongClickListener(this)
-        binding.homeApp6.setOnLongClickListener(this)
-        binding.homeApp7.setOnLongClickListener(this)
-        binding.homeApp8.setOnLongClickListener(this)
+        homeAppViews.forEach { textView ->
+            textView.setOnClickListener(this)
+            textView.setOnLongClickListener(this)
+        }
     }
 
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
         val verticalGravity = if (prefs.homeBottomAlignment) Gravity.BOTTOM else Gravity.CENTER_VERTICAL
         binding.homeAppsLayout.gravity = horizontalGravity or verticalGravity
         binding.dateTimeLayout.gravity = horizontalGravity
-        binding.homeApp1.gravity = horizontalGravity
-        binding.homeApp2.gravity = horizontalGravity
-        binding.homeApp3.gravity = horizontalGravity
-        binding.homeApp4.gravity = horizontalGravity
-        binding.homeApp5.gravity = horizontalGravity
-        binding.homeApp6.gravity = horizontalGravity
-        binding.homeApp7.gravity = horizontalGravity
-        binding.homeApp8.gravity = horizontalGravity
+        homeAppViews.forEach { it.gravity = horizontalGravity }
     }
 
     private fun populateDateTime() {
@@ -274,7 +278,6 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         binding.clock.isVisible = Constants.DateTime.isTimeVisible(prefs.dateTimeVisibility)
         binding.date.isVisible = Constants.DateTime.isDateVisible(prefs.dateTimeVisibility)
 
-//        var dateText = SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(Date())
         val dateFormat = SimpleDateFormat("EEE, d MMM", Locale.getDefault())
         var dateText = dateFormat.format(Date())
 
@@ -295,11 +298,11 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         binding.tvScreenTime.visibility = View.VISIBLE
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val horizontalMargin = if (isLandscape) 64.dpToPx() else 10.dpToPx()
+        val horizontalMargin = if (isLandscape) 64.dpToPx() else 16.dpToPx()
         val marginTop = if (isLandscape) {
-            if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 36.dpToPx() else 56.dpToPx()
+            if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 24.dpToPx() else 36.dpToPx()
         } else {
-            if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 45.dpToPx() else 72.dpToPx()
+            if (prefs.dateTimeVisibility == Constants.DateTime.DATE_ONLY) 36.dpToPx() else 52.dpToPx()
         }
         val params = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -311,7 +314,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             gravity = if (prefs.homeAlignment == Gravity.END) Gravity.START else Gravity.END
         }
         binding.tvScreenTime.layoutParams = params
-        binding.tvScreenTime.setPadding(10.dpToPx())
+        binding.tvScreenTime.setPadding(8.dpToPx())
     }
 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
@@ -324,60 +327,151 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         val homeAppsNum = prefs.homeAppsNum
         if (homeAppsNum == 0) return
 
-        binding.homeApp1.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp1, prefs.appName1, prefs.appPackage1, prefs.appUser1, prefs.isShortcut1, prefs.shortcutId1)) {
-            prefs.appName1 = ""
-            prefs.appPackage1 = ""
+        for (i in 0 until homeAppsNum.coerceAtMost(homeAppViews.size)) {
+            val location = i + 1
+            val textView = homeAppViews[i]
+            textView.visibility = View.VISIBLE
+            if (!setHomeAppText(
+                    textView,
+                    prefs.getAppName(location),
+                    prefs.getAppPackage(location),
+                    prefs.getAppUser(location),
+                    prefs.getIsShortcut(location),
+                    prefs.getShortcutId(location)
+                )
+            ) {
+                prefs.setAppName(location, "")
+                prefs.setAppPackage(location, "")
+            }
         }
-        if (homeAppsNum == 1) return
+    }
 
-        binding.homeApp2.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp2, prefs.appName2, prefs.appPackage2, prefs.appUser2, prefs.isShortcut2, prefs.shortcutId2)) {
-            prefs.appName2 = ""
-            prefs.appPackage2 = ""
+    private fun setupTodoWidget() {
+        binding.btnQuickAddTodo.setOnClickListener {
+            showQuickAddTodoDialog()
         }
-        if (homeAppsNum == 2) return
+        binding.tvTodoEmpty.setOnClickListener {
+            showQuickAddTodoDialog()
+        }
+        binding.todoWidgetHeader.setOnClickListener {
+            openFullTodoListDialog()
+        }
+        binding.todoWidgetCard.setOnLongClickListener {
+            openFullTodoListDialog()
+            true
+        }
+        populateTodoWidget()
+    }
 
-        binding.homeApp3.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp3, prefs.appName3, prefs.appPackage3, prefs.appUser3, prefs.isShortcut3, prefs.shortcutId3)) {
-            prefs.appName3 = ""
-            prefs.appPackage3 = ""
-        }
-        if (homeAppsNum == 3) return
+    private fun updateTodoProgressBadge(todos: List<app.olauncher.helper.TodoItem>) {
+        val total = todos.size
+        val completedCount = todos.count { it.isCompleted }
 
-        binding.homeApp4.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp4, prefs.appName4, prefs.appPackage4, prefs.appUser4, prefs.isShortcut4, prefs.shortcutId4)) {
-            prefs.appName4 = ""
-            prefs.appPackage4 = ""
+        if (total == 0) {
+            binding.tvTodoProgress.text = "0/0"
+            binding.tvTodoProgress.setTextColor(Color.parseColor("#888888"))
+        } else if (completedCount == total) {
+            binding.tvTodoProgress.text = getString(R.string.all_completed)
+            binding.tvTodoProgress.setTextColor(Color.parseColor("#FFFFFF"))
+        } else {
+            binding.tvTodoProgress.text = "$completedCount/$total"
+            binding.tvTodoProgress.setTextColor(Color.parseColor("#CCCCCC"))
         }
-        if (homeAppsNum == 4) return
+    }
 
-        binding.homeApp5.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp5, prefs.appName5, prefs.appPackage5, prefs.appUser5, prefs.isShortcut5, prefs.shortcutId5)) {
-            prefs.appName5 = ""
-            prefs.appPackage5 = ""
+    private fun updateTodoItemVisual(isCompleted: Boolean, tvTitle: TextView, ivCheck: ImageView) {
+        if (isCompleted) {
+            tvTitle.paintFlags = tvTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+            tvTitle.setTextColor(Color.parseColor("#666666"))
+            ivCheck.setImageResource(R.drawable.ic_circle_checked)
+        } else {
+            tvTitle.paintFlags = tvTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+            tvTitle.setTextColor(Color.parseColor("#FFFFFF"))
+            ivCheck.setImageResource(R.drawable.ic_circle_outline)
         }
-        if (homeAppsNum == 5) return
+    }
 
-        binding.homeApp6.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp6, prefs.appName6, prefs.appPackage6, prefs.appUser6, prefs.isShortcut6, prefs.shortcutId6)) {
-            prefs.appName6 = ""
-            prefs.appPackage6 = ""
-        }
-        if (homeAppsNum == 6) return
+    private fun populateTodoWidget() {
+        if (!::vaultManager.isInitialized) return
+        val todos = vaultManager.getTodoList()
+        updateTodoProgressBadge(todos)
 
-        binding.homeApp7.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp7, prefs.appName7, prefs.appPackage7, prefs.appUser7, prefs.isShortcut7, prefs.shortcutId7)) {
-            prefs.appName7 = ""
-            prefs.appPackage7 = ""
-        }
-        if (homeAppsNum == 7) return
+        binding.llTodoItemsContainer.removeAllViews()
 
-        binding.homeApp8.visibility = View.VISIBLE
-        if (!setHomeAppText(binding.homeApp8, prefs.appName8, prefs.appPackage8, prefs.appUser8, prefs.isShortcut8, prefs.shortcutId8)) {
-            prefs.appName8 = ""
-            prefs.appPackage8 = ""
+        if (todos.isEmpty()) {
+            binding.tvTodoEmpty.visibility = View.VISIBLE
+            binding.nsvTodoList.visibility = View.GONE
+        } else {
+            binding.tvTodoEmpty.visibility = View.GONE
+            binding.nsvTodoList.visibility = View.VISIBLE
+
+            for (item in todos) {
+                val itemView = layoutInflater.inflate(R.layout.item_home_todo, binding.llTodoItemsContainer, false)
+                val ivCheck = itemView.findViewById<ImageView>(R.id.ivTodoCheck)
+                val tvTitle = itemView.findViewById<TextView>(R.id.tvTodoTitle)
+
+                tvTitle.text = item.title
+                updateTodoItemVisual(item.isCompleted, tvTitle, ivCheck)
+
+                val toggleAction = {
+                    vaultManager.toggleTodo(item.id)
+                    val updated = vaultManager.getTodoList().find { it.id == item.id }
+                    val isDone = updated?.isCompleted ?: false
+                    updateTodoItemVisual(isDone, tvTitle, ivCheck)
+                    updateTodoProgressBadge(vaultManager.getTodoList())
+                }
+
+                itemView.setOnClickListener { toggleAction() }
+                itemView.setOnLongClickListener {
+                    openFullTodoListDialog()
+                    true
+                }
+                binding.llTodoItemsContainer.addView(itemView)
+            }
         }
+    }
+
+    private fun showQuickAddTodoDialog() {
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val dialogView = layoutInflater.inflate(R.layout.dialog_quick_add_todo, null)
+        val etTitle = dialogView.findViewById<EditText>(R.id.etQuickAddTodoTitle)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnQuickAddCancel)
+        val btnConfirm = dialogView.findViewById<Button>(R.id.btnQuickAddConfirm)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        btnConfirm.setOnClickListener {
+            val text = etTitle.text.toString().trim()
+            if (text.isNotEmpty()) {
+                vaultManager.addTodo(text)
+                populateTodoWidget()
+                dialog.dismiss()
+            }
+        }
+        etTitle.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                btnConfirm.performClick()
+                true
+            } else false
+        }
+
+        dialog.setContentView(dialogView)
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.88).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        etTitle.requestFocus()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+    }
+
+    private fun openFullTodoListDialog() {
+        val dialog = TodoListDialogFragment.newInstance()
+        dialog.onDismissCallback = {
+            populateTodoWidget()
+        }
+        dialog.show(parentFragmentManager, "TODO_LIST")
     }
 
     private fun setHomeAppText(
@@ -388,22 +482,16 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
         isShortcut: Boolean,
         shortcutId: String?,
     ): Boolean {
-        // Get user handle for the app/shortcut
         val userHandle = getUserHandleFromString(requireContext(), userString)
 
-        // If it's a shortcut, verify it still exists
         if (isShortcut) {
             val launcherApps = requireContext().getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-
-            // Query for the specific shortcut
             val query = LauncherApps.ShortcutQuery().apply {
                 setPackage(packageName)
                 setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
             }
-
             try {
                 val shortcuts = launcherApps.getShortcuts(query, userHandle)
-                // Check if our shortcut still exists
                 if (shortcuts?.any { it.id == shortcutId } == true) {
                     textView.text = appName
                     return true
@@ -417,7 +505,6 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             }
         }
 
-        // Regular app check
         if (isPackageInstalled(requireContext(), packageName, userString)) {
             textView.text = appName
             return true
@@ -427,14 +514,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
     }
 
     private fun hideHomeApps() {
-        binding.homeApp1.visibility = View.GONE
-        binding.homeApp2.visibility = View.GONE
-        binding.homeApp3.visibility = View.GONE
-        binding.homeApp4.visibility = View.GONE
-        binding.homeApp5.visibility = View.GONE
-        binding.homeApp6.visibility = View.GONE
-        binding.homeApp7.visibility = View.GONE
-        binding.homeApp8.visibility = View.GONE
+        homeAppViews.forEach { it.visibility = View.GONE }
     }
 
     private fun launchAppOrShortcut(
@@ -450,6 +530,58 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
             showLongPressToast()
             return
         }
+
+        val launchAction = {
+            // Check Mindful Friction mode
+            if (prefs.frictionModeEnabled && prefs.isAppFrictionEnabled(packageName)) {
+                FrictionHelper.showMindfulPauseDialog(
+                    context = requireContext(),
+                    appName = appName,
+                    durationSeconds = prefs.frictionDuration,
+                    onProceed = {
+                        executeLaunch(appName, packageName, activityClassName, shortcutId, isShortcut, userString, fallback)
+                    }
+                )
+            } else {
+                executeLaunch(appName, packageName, activityClassName, shortcutId, isShortcut, userString, fallback)
+            }
+        }
+
+        // Check Restricted Vault Protection (Social Media / Vault Apps)
+        val vaultManager = app.olauncher.helper.VaultManager(requireContext())
+        if (vaultManager.isAppProtected(packageName)) {
+            val challengeDialog = app.olauncher.ui.vault.VaultChallengeDialogFragment.newInstance(appName, packageName)
+            challengeDialog.setOnUnlockListener(object : app.olauncher.ui.vault.VaultChallengeDialogFragment.OnUnlockListener {
+                override fun onUnlocked() {
+                    launchAction()
+                }
+            })
+            challengeDialog.show(parentFragmentManager, "VAULT_CHALLENGE")
+            return
+        }
+
+        // Check Biometric security lock
+        if (prefs.biometricLockEnabled && prefs.isAppBiometricLocked(packageName)) {
+            BiometricHelper.authenticate(
+                activity = requireActivity(),
+                title = "Unlock $appName",
+                onSuccess = { launchAction() },
+                onError = { err -> requireContext().showToast(err) }
+            )
+        } else {
+            launchAction()
+        }
+    }
+
+    private fun executeLaunch(
+        appName: String,
+        packageName: String,
+        activityClassName: String?,
+        shortcutId: String?,
+        isShortcut: Boolean,
+        userString: String,
+        fallback: (() -> Unit)? = null
+    ) {
         if (isShortcut && !shortcutId.isNullOrEmpty()) {
             launchShortcut(
                 packageName = packageName,
@@ -596,17 +728,6 @@ class HomeFragment : BaseFragment(), View.OnClickListener, View.OnLongClickListe
                 systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE or View.SYSTEM_UI_FLAG_FULLSCREEN
             }
         }
-    }
-
-    private fun changeAppTheme() {
-        if (prefs.dailyWallpaper.not()) return
-        val changedAppTheme = getChangedAppTheme(requireContext(), prefs.appTheme)
-        prefs.appTheme = changedAppTheme
-        if (prefs.dailyWallpaper) {
-            setPlainWallpaperByTheme(requireContext(), changedAppTheme)
-            viewModel.setWallpaperWorker()
-        }
-        requireActivity().recreate()
     }
 
     private fun openScreenTimeDigitalWellbeing() {
