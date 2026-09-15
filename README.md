@@ -1,7 +1,8 @@
 # Dlauncher 🖤
 ### A Dumb Phone Minimalist Launcher for Android
 
-[![Download Latest APK](https://img.shields.io/badge/Download-Latest%20APK-white?style=for-the-badge&logo=github&logoColor=black)](https://github.com/rahul-mallick001/dlauncher/releases)
+[![Download Latest APK](https://img.shields.io/badge/Download-dlauncher--v1.0.0.apk-white?style=for-the-badge&logo=android&logoColor=black)](https://github.com/rahul-mallick001/dlauncher/releases/download/v1.0.0/dlauncher-v1.0.0.apk)
+[![Release](https://img.shields.io/github/v/release/rahul-mallick001/dlauncher?style=for-the-badge&logo=github&color=white&labelColor=black)](https://github.com/rahul-mallick001/dlauncher/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/rahul-mallick001/dlauncher)
 [![Theme](https://img.shields.io/badge/Theme-Pure%20AMOLED%20Black-000000?style=for-the-badge)](https://github.com/rahul-mallick001/dlauncher)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0.en.html)
@@ -11,13 +12,12 @@
 
 ## 📥 Download & Install
 
-Direct APK downloads are hosted on GitHub Releases:
+### [⚡ **Direct APK Download: `dlauncher-v1.0.0.apk` (8.3 MB)**](https://github.com/rahul-mallick001/dlauncher/releases/download/v1.0.0/dlauncher-v1.0.0.apk)
+### [📦 **Browse All Releases & Assets**](https://github.com/rahul-mallick001/dlauncher/releases/latest)
 
-### [👉 **Click Here to Download Latest APK**](https://github.com/rahul-mallick001/dlauncher/releases)
-
-1. Download the latest `app-debug.apk` or release `.apk` from the **Releases** page.
-2. Tap the downloaded file and select **Install** (allow "Install unknown apps" if prompted).
-3. Press your device **Home** button and select **Dlauncher** as your default home app.
+1. Tap [**Direct APK Download**](https://github.com/rahul-mallick001/dlauncher/releases/download/v1.0.0/dlauncher-v1.0.0.apk) to get `dlauncher-v1.0.0.apk`.
+2. Open the downloaded `.apk` file and tap **Install** (allow "Install unknown apps" from browser if prompted).
+3. Press your device **Home** button and select **Dlauncher** as your default home launcher.
 4. *(Recommended)* Grant **Usage Access** permission in Settings to enable live Screen Time tracking and Stage 1 Vault reflection.
 
 ---
